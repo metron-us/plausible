@@ -1,0 +1,493 @@
+openapi: 3.1.0
+info:
+  title: Plausible Stats API
+  version: "2.0"
+  description: |
+    The Plausible Stats API allows you to retrieve aggregated analytics data for your websites.
+
+    ## Rate Limiting
+    - Default: 600 requests per hour
+    - Can be increased for higher-tier plans
+
+    ## Authentication
+    API keys can be created in your Plausible account settings under the API Keys section.
+    Select "Stats API" when creating a new key.
+  contact:
+    name: Plausible Analytics
+    url: https://plausible.io
+  license:
+    name: MIT
+    identifier: MIT
+
+servers:
+  - url: https://plausible.io/api/v2
+    description: Production server
+  - url: "{baseUrl}/api/v2"
+    description: Self-hosted instance
+    variables:
+      baseUrl:
+        default: https://plausible.io
+        description: Base URL of your Plausible instance
+
+security:
+  - BearerAuth: []
+
+paths:
+  /query:
+    post:
+      summary: Query site statistics
+      description: |
+        Execute a query against the Plausible Stats API to retrieve aggregated analytics data.
+
+        Supports filtering, grouping by dimensions, ordering, and pagination.
+      operationId: querySiteStats
+      tags:
+        - Statistics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QueryRequest"
+            examples:
+              basicQuery:
+                summary: Basic visitor count
+                value:
+                  site_id: "example.com"
+                  date_range: "7d"
+                  metrics: ["visitors", "pageviews", "bounce_rate"]
+
+              withDimensions:
+                summary: Page statistics grouped by page
+                value:
+                  site_id: "example.com"
+                  date_range: "30d"
+                  metrics: ["visitors", "pageviews"]
+                  dimensions: ["event:page"]
+                  order_by: ["visitors", "desc"]
+                  limit: 10
+
+              withFilters:
+                summary: US visitors only
+                value:
+                  site_id: "example.com"
+                  date_range: "7d"
+                  metrics: ["visitors"]
+                  filters:
+                    - ["is", "visit:country", ["US"]]
+
+              complexFilter:
+                summary: Complex filtering with logical operators
+                value:
+                  site_id: "example.com"
+                  date_range: "30d"
+                  metrics: ["visitors", "conversion_rate"]
+                  filters:
+                    - - "and"
+                      - - ["is", "visit:country", ["US", "CA", "GB"]]
+                        - - "or"
+                          - - ["contains", "event:page", ["/products"]]
+                            - ["contains", "event:page", ["/pricing"]]
+                        - ["is_not", "visit:device", ["Mobile"]]
+
+              pagination:
+                summary: Paginated results
+                value:
+                  site_id: "example.com"
+                  date_range: "7d"
+                  metrics: ["visitors"]
+                  dimensions: ["event:page"]
+                  limit: 100
+                  offset: 200
+
+      responses:
+        "200":
+          description: Successful query response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryResponse"
+              examples:
+                basicResponse:
+                  summary: Simple aggregated metrics
+                  value:
+                    results:
+                      - visitors: 1234
+                        pageviews: 5678
+                        bounce_rate: 45.2
+
+                dimensionResponse:
+                  summary: Results grouped by dimension
+                  value:
+                    results:
+                      - event:page: "/home"
+                        visitors: 450
+                        pageviews: 890
+                      - event:page: "/about"
+                        visitors: 230
+                        pageviews: 310
+                      - event:page: "/pricing"
+                        visitors: 180
+                        pageviews: 245
+
+        "400":
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidMetric:
+                  value:
+                    error: "Invalid metric: invalid_metric"
+
+                missingSiteId:
+                  value:
+                    error: "site_id is required"
+
+        "401":
+          description: Unauthorized - invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Invalid API key"
+
+        "402":
+          description: Payment required - feature requires higher tier plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "This feature requires a paid plan"
+
+        "429":
+          description: Rate limit exceeded
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+              description: The rate limit ceiling for requests per hour
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+              description: The number of requests remaining in the current window
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+              description: The time at which the rate limit resets (Unix timestamp)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Rate limit exceeded. Please retry after the reset time."
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        API key authentication using Bearer token.
+        Create an API key in your Plausible account settings under API Keys section.
+
+  schemas:
+    QueryRequest:
+      type: object
+      required:
+        - site_id
+        - date_range
+        - metrics
+      properties:
+        site_id:
+          type: string
+          description: The domain of the site to query (must be registered in your Plausible account)
+          example: "example.com"
+
+        date_range:
+          oneOf:
+            - type: string
+              enum:
+                - day
+                - 7d
+                - 28d
+                - 30d
+                - 91d
+                - month
+                - 6mo
+                - 12mo
+                - year
+                - all
+              description: Relative date range
+            - type: array
+              minItems: 2
+              maxItems: 2
+              items:
+                type: string
+                format: date
+              description: Custom date range as ISO8601 dates [start, end]
+              example: ["2024-01-01", "2024-01-31"]
+            - type: array
+              minItems: 2
+              maxItems: 2
+              items:
+                type: string
+                format: date-time
+              description: Real-time date range with timestamps [start, end]
+              example: ["2024-01-01T12:00:00+02:00", "2024-01-01T12:05:00+02:00"]
+
+        metrics:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Metric"
+          description: List of metrics to retrieve
+          example: ["visitors", "pageviews", "bounce_rate"]
+
+        dimensions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Dimension"
+          description: Dimensions for grouping results
+          example: ["event:page", "visit:country"]
+
+        filters:
+          type: array
+          items:
+            type: array
+          description: |
+            Array of filter clauses using Plausible's filter DSL.
+
+            Simple filter format: `[operator, dimension, [values]]`
+            Logical filter format: `[logical_operator, [filters...]]`
+
+            See Filter schema for full details.
+          example:
+            - ["is", "visit:country", ["US"]]
+
+        order_by:
+          type: array
+          minItems: 2
+          maxItems: 2
+          description: |
+            Order results by metric or dimension: [field, direction]
+
+            - field: metric or dimension name
+            - direction: "asc" or "desc"
+          example: ["visitors", "desc"]
+
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          description: Maximum number of results to return
+          example: 100
+
+        offset:
+          type: integer
+          minimum: 0
+          description: Number of results to skip (for pagination)
+          example: 0
+
+        include_imported:
+          type: boolean
+          description: Include imported data from Google Analytics
+          default: false
+
+    Metric:
+      type: string
+      enum:
+        # Core metrics
+        - visitors
+        - visits
+        - pageviews
+        - views_per_visit
+        - bounce_rate
+        - visit_duration
+        - events
+        # Specialized metrics
+        - scroll_depth
+        - percentage
+        - conversion_rate
+        - group_conversion_rate
+        - time_on_page
+        # Revenue metrics
+        - average_revenue
+        - total_revenue
+      description: |
+        Available metrics:
+
+        **Core Metrics:**
+        - `visitors` - Unique visitors
+        - `visits` - Total visits
+        - `pageviews` - Total page views
+        - `views_per_visit` - Average page views per visit
+        - `bounce_rate` - Percentage of single-page visits
+        - `visit_duration` - Average visit duration (seconds)
+        - `events` - Total events (pageviews + custom events)
+
+        **Specialized Metrics:**
+        - `scroll_depth` - Average scroll depth (requires event:page dimension/filter)
+        - `percentage` - Percentage of total
+        - `conversion_rate` - Goal conversion rate
+        - `group_conversion_rate` - Per-dimension conversion rate
+        - `time_on_page` - Average time spent on page
+
+        **Revenue Metrics:**
+        - `average_revenue` - Average revenue per conversion
+        - `total_revenue` - Total revenue from conversions
+
+    Dimension:
+      type: string
+      description: |
+        Dimensions for grouping results. Can be event, visit, or time-based.
+
+        **Event Dimensions:**
+        - `event:goal` - Goal name
+        - `event:page` - Page path
+        - `event:hostname` - Hostname
+        - `event:props:{name}` - Custom event property
+
+        **Visit Dimensions:**
+        - `visit:entry_page` - Entry page
+        - `visit:exit_page` - Exit page
+        - `visit:source` - Traffic source
+        - `visit:referrer` - Referrer URL
+        - `visit:channel` - Traffic channel
+        - `visit:utm_medium`, `visit:utm_source`, `visit:utm_campaign`, `visit:utm_content`, `visit:utm_term` - UTM parameters
+        - `visit:device` - Device type
+        - `visit:browser`, `visit:browser_version` - Browser info
+        - `visit:os`, `visit:os_version` - Operating system
+        - `visit:country`, `visit:region`, `visit:city` - Location
+
+        **Time Dimensions:**
+        - `time` - Date
+        - `time:hour` - Hour of day
+        - `time:day` - Day of week
+        - `time:week` - Week number
+        - `time:month` - Month
+      example: "event:page"
+
+    Filter:
+      type: array
+      description: |
+        A filter clause using Plausible's filter DSL. Filters can be simple or logical.
+
+        **Simple Filter Format:**
+        ```
+        [operator, dimension, [values]]
+        ```
+
+        **Logical Filter Format:**
+        ```
+        [logical_operator, [filter1, filter2, ...]]
+        ```
+
+        **Simple Filter Examples:**
+        - `["is", "visit:country", ["US", "CA", "GB"]]` - Country is US, CA, or GB
+        - `["is_not", "visit:device", ["Mobile"]]` - Device is not Mobile
+        - `["contains", "event:page", ["/products"]]` - Page contains "/products"
+        - `["matches", "event:page", ["^/blog/.*"]]` - Page matches regex pattern
+
+        **Logical Filter Examples:**
+        - `["and", [filter1, filter2]]` - Both filters must match
+        - `["or", [filter1, filter2]]` - Either filter must match
+        - `["not", [filter1]]` - Inverts the filter
+
+        **Complex Example:**
+        ```json
+        [
+          "and",
+          [
+            ["is", "visit:country", ["US", "CA"]],
+            [
+              "or",
+              [
+                ["contains", "event:page", ["/products"]],
+                ["contains", "event:page", ["/pricing"]]
+              ]
+            ]
+          ]
+        ]
+        ```
+
+        See FilterOperator and LogicalOperator schemas for available operators.
+
+    FilterOperator:
+      type: string
+      enum:
+        - is
+        - is_not
+        - contains
+        - contains_not
+        - matches
+        - matches_not
+      description: |
+        Filter operators:
+        - `is` - Exact match (any of the values)
+        - `is_not` - Does not match (none of the values)
+        - `contains` - Partial string match (case-insensitive)
+        - `contains_not` - Does not contain string
+        - `matches` - Regex pattern match
+        - `matches_not` - Does not match regex pattern
+
+    LogicalOperator:
+      type: string
+      enum:
+        - and
+        - or
+        - not
+      description: |
+        Logical operators for combining filters:
+        - `and` - All conditions must be true
+        - `or` - Any condition must be true
+        - `not` - Inverts the condition
+
+    QueryResponse:
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/QueryResult"
+          description: Array of query results
+
+        meta:
+          type: object
+          properties:
+            warning:
+              type: string
+              description: Warning message if applicable
+          description: Query metadata
+
+    QueryResult:
+      type: object
+      additionalProperties: true
+      description: |
+        Individual result row. Contains requested metrics and dimension values.
+
+        Keys are either metric names or dimension names, with values being numbers, strings, or null.
+      example:
+        event:page: "/home"
+        visitors: 1234
+        pageviews: 5678
+        bounce_rate: 45.2
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+          example: "Invalid API key"
+
+tags:
+  - name: Statistics
+    description: Query aggregated analytics statistics

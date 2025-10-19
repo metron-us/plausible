@@ -1,0 +1,38 @@
+{
+  "name": "@metron/plausible",
+  "version": "0.1.0",
+  "description": "TypeScript client library for Plausible Analytics Stats API",
+  "type": "module",
+  "main": "./dist/mod.js",
+  "types": "./dist/mod.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/mod.js",
+      "types": "./dist/mod.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "deno run -A npm:@deno/dnt",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "deno lint",
+    "fmt": "deno fmt",
+    "check": "deno check src/**/*.ts"
+  },
+  "keywords": [
+    "plausible",
+    "analytics",
+    "stats",
+    "api",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "files": [
+    "dist"
+  ]
+}
