@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-01-19
+
 ### Added
 
 - Custom `PlausibleApiError` class for better error handling with `statusCode` and `response` properties
@@ -14,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSDoc examples for complex types (`DateRange`, `SimpleFilter`, `LogicalFilter`, `Filter`)
 - Dedicated `QueryResponseMeta` interface for response metadata
 - Example documentation for `QueryResponse` type
+- CHANGELOG.md file
+- Copyright holder to LICENSE file
 
 ### Changed
 
@@ -36,5 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenAPI specification for the Plausible Stats API
 - GitHub Actions workflow for automated publishing to JSR
 
-[Unreleased]: https://github.com/metron-us/plausible/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/metron-us/plausible/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/metron-us/plausible/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/metron-us/plausible/releases/tag/v0.1.0
