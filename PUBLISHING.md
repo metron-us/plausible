@@ -82,56 +82,65 @@ Update the `version` field in `deno.json` before publishing.
    git push origin v0.2.0
    ```
 
-### Option 2: GitHub Actions (Recommended for CI/CD)
+### Option 2: GitHub Actions (Recommended)
 
-1. **Link package to GitHub repository**:
+This repository is configured with automated publishing via GitHub Actions. The workflow is already set up in `.github/workflows/publish.yml`.
+
+#### Prerequisites
+
+1. **Link package to GitHub repository** (one-time setup):
    - Go to [jsr.io](https://jsr.io)
-   - Navigate to your package settings
-   - Link the GitHub repository
+   - Navigate to `@metron/plausible` package settings
+   - Link this GitHub repository
+   - This enables GitHub Actions to publish on your behalf
 
-2. **Create `.github/workflows/publish.yml`**:
-   ```yaml
-   name: Publish to JSR
+#### Publishing Process
 
-   on:
-     push:
-       tags:
-         - "v*"
-
-   permissions:
-     contents: read
-     id-token: write
-
-   jobs:
-     publish:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: actions/checkout@v4
-
-         - uses: denoland/setup-deno@v1
-           with:
-             deno-version: v1.x
-
-         - name: Run tests
-           run: deno task test
-
-         - name: Type check
-           run: deno task check
-
-         - name: Lint
-           run: deno task lint
-
-         - name: Publish to JSR
-           run: deno publish
+1. **Update version number** in `deno.json`:
+   ```json
+   {
+     "version": "0.2.0"
+   }
    ```
 
-3. **Tag and push**:
+2. **Run pre-publish checks locally** (recommended):
    ```bash
+   deno task test
+   deno task check
+   deno task lint
+   deno task publish:check
+   ```
+
+3. **Commit and tag**:
+   ```bash
+   git add deno.json
+   git commit -m "chore: bump version to 0.2.0"
    git tag v0.2.0
+   ```
+
+4. **Push tag to trigger workflow**:
+   ```bash
+   git push origin main
    git push origin v0.2.0
    ```
 
-4. GitHub Actions will automatically publish the package
+5. **Monitor the workflow**:
+   - Go to the Actions tab in GitHub
+   - The "Publish to JSR" workflow will run automatically
+   - It will run tests, type checking, linting, and publish to JSR
+   - Check the workflow logs if any step fails
+
+#### What the Workflow Does
+
+The automated workflow (`.github/workflows/publish.yml`):
+- Triggers on any tag matching `v*` pattern
+- Sets up Deno v1.x
+- Runs all tests with `deno task test`
+- Performs type checking with `deno task check`
+- Runs linting with `deno task lint`
+- Publishes to JSR with `deno publish`
+
+All quality checks must pass before publishing occurs.
 
 ## Troubleshooting
 
