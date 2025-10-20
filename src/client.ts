@@ -3,11 +3,13 @@ import { PlausibleApiError } from "./types.ts";
 
 /**
  * Client for interacting with the Plausible Stats API.
+ *
+ * Note: The Plausible API has a rate limit of 600 requests per hour.
+ * Rate limiting is the responsibility of the consumer.
  */
 export class PlausibleClient {
   private readonly apiKey: string;
   private readonly baseUrl: string;
-  private readonly rateLimit = 600; // requests per hour
 
   constructor(config: PlausibleConfig) {
     this.apiKey = config.apiKey;
