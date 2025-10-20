@@ -1,5 +1,6 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { PlausibleClient } from "../src/client.ts";
+import { PlausibleApiError } from "../src/types.ts";
 import type { Filter, QueryParams } from "../src/types.ts";
 import {
   createCapturingMockFetch,
@@ -306,8 +307,8 @@ Deno.test("PlausibleClient - handles API errors", async () => {
           metrics: ["visitors"],
         });
       },
-      Error,
-      "Plausible API error: Invalid API key",
+      PlausibleApiError,
+      "Invalid API key",
     );
   } finally {
     globalThis.fetch = originalFetch;
@@ -331,9 +332,38 @@ Deno.test("PlausibleClient - handles validation errors", async () => {
           metrics: ["visitors"],
         });
       },
-      Error,
-      "Plausible API error: Site not found",
+      PlausibleApiError,
+      "Site not found",
     );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+Deno.test("PlausibleClient - PlausibleApiError includes status code", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = createMockFetch(
+    createErrorResponse("Site not found"),
+  );
+
+  try {
+    const client = new PlausibleClient({ apiKey: "test-key" });
+
+    try {
+      await client.query({
+        site_id: "nonexistent.com",
+        date_range: "7d",
+        metrics: ["visitors"],
+      });
+    } catch (error) {
+      if (error instanceof PlausibleApiError) {
+        assertEquals(error.statusCode, 400);
+        assertEquals(error.message, "Site not found");
+        assertEquals(error.name, "PlausibleApiError");
+      } else {
+        throw new Error("Expected PlausibleApiError");
+      }
+    }
   } finally {
     globalThis.fetch = originalFetch;
   }

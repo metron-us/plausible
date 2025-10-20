@@ -1,4 +1,5 @@
 import type { PlausibleConfig, PlausibleError, QueryParams, QueryResponse } from "./types.ts";
+import { PlausibleApiError } from "./types.ts";
 
 /**
  * Client for interacting with the Plausible Stats API.
@@ -64,7 +65,11 @@ export class PlausibleClient {
 
     if (!response.ok) {
       const error = await response.json() as PlausibleError;
-      throw new Error(`Plausible API error: ${error.error}`);
+      throw new PlausibleApiError(
+        error.error,
+        response.status,
+        error,
+      );
     }
 
     return await response.json() as QueryResponse;

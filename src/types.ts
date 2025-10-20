@@ -160,3 +160,38 @@ export interface PlausibleError {
   /** Error message */
   error: string;
 }
+
+/**
+ * Custom error class for Plausible API errors.
+ * Provides additional context beyond standard Error objects.
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await client.query(params);
+ * } catch (error) {
+ *   if (error instanceof PlausibleApiError) {
+ *     console.error(`API Error (${error.statusCode}): ${error.message}`);
+ *     // Handle specific status codes
+ *     if (error.statusCode === 429) {
+ *       // Rate limit exceeded
+ *     }
+ *   }
+ * }
+ * ```
+ */
+export class PlausibleApiError extends Error {
+  /**
+   * @param message - Human-readable error message
+   * @param statusCode - HTTP status code from the API response
+   * @param response - Raw response data from the API
+   */
+  constructor(
+    message: string,
+    public readonly statusCode: number,
+    public readonly response?: unknown,
+  ) {
+    super(message);
+    this.name = "PlausibleApiError";
+  }
+}

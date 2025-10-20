@@ -20,6 +20,7 @@
  */
 
 export { PlausibleClient } from "./client.ts";
+export { PlausibleApiError } from "./types.ts";
 export type {
   DateRange,
   Dimension,
