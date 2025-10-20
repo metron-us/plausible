@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Custom `PlausibleApiError` class for better error handling with `statusCode` and `response` properties
 - CI workflow for automated testing on pull requests and pushes to main
 - JSDoc examples for complex types (`DateRange`, `SimpleFilter`, `LogicalFilter`, `Filter`)
@@ -15,15 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Example documentation for `QueryResponse` type
 
 ### Changed
+
 - Error handling now throws `PlausibleApiError` instead of generic `Error`
 - Improved JSDoc documentation throughout type definitions
 
 ### Removed
+
 - Unused `rateLimit` property from `PlausibleClient` (rate limiting is consumer's responsibility)
 
 ## [0.1.0] - 2025-01-XX
 
 ### Added
+
 - Initial release
 - Full TypeScript client for Plausible Stats API v2
 - Support for metrics, dimensions, and filters

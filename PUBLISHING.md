@@ -133,6 +133,7 @@ This repository is configured with automated publishing via GitHub Actions. The 
 #### What the Workflow Does
 
 The automated workflow (`.github/workflows/publish.yml`):
+
 - Triggers on any tag matching `v*` pattern
 - Sets up Deno v1.x
 - Runs all tests with `deno task test`
