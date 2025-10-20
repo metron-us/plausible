@@ -16,6 +16,17 @@ export interface PlausibleConfig {
 /**
  * Date range for queries.
  * Supports relative ranges (e.g., "7d", "30d", "month") or custom ISO8601 dates.
+ *
+ * @example
+ * ```ts
+ * // Relative date ranges
+ * const last7Days: DateRange = "7d";
+ * const last30Days: DateRange = "30d";
+ * const thisMonth: DateRange = "month";
+ *
+ * // Custom date range with ISO8601 dates
+ * const customRange: DateRange = ["2024-01-01", "2024-01-31"];
+ * ```
  */
 export type DateRange = string | [string, string];
 
@@ -90,16 +101,74 @@ export type LogicalOperator = "and" | "or" | "not";
 
 /**
  * Simple filter clause: [operator, dimension, values]
+ *
+ * @example
+ * ```ts
+ * // Filter for US visitors only
+ * const filter: SimpleFilter = ["is", "visit:country", ["US"]];
+ *
+ * // Filter for pages containing "/blog"
+ * const blogFilter: SimpleFilter = ["contains", "event:page", ["/blog"]];
+ *
+ * // Exclude mobile devices
+ * const noMobile: SimpleFilter = ["is_not", "visit:device", ["Mobile"]];
+ * ```
  */
 export type SimpleFilter = [FilterOperator, string, string[]];
 
 /**
  * Logical filter clause: [logical_operator, filters]
+ *
+ * @example
+ * ```ts
+ * // Combine multiple conditions with AND
+ * const andFilter: LogicalFilter = [
+ *   "and",
+ *   [
+ *     ["is", "visit:country", ["US", "CA"]],
+ *     ["contains", "event:page", ["/products"]],
+ *   ],
+ * ];
+ *
+ * // Use OR to match any condition
+ * const orFilter: LogicalFilter = [
+ *   "or",
+ *   [
+ *     ["is", "visit:source", ["twitter"]],
+ *     ["is", "visit:source", ["facebook"]],
+ *   ],
+ * ];
+ *
+ * // Negate a condition with NOT
+ * const notFilter: LogicalFilter = [
+ *   "not",
+ *   [["is", "visit:device", ["Mobile"]]],
+ * ];
+ * ```
  */
 export type LogicalFilter = [LogicalOperator, Filter[]];
 
 /**
  * Any filter type (simple or logical).
+ *
+ * @example
+ * ```ts
+ * // Nested logical filters for complex queries
+ * const complexFilter: Filter = [
+ *   "and",
+ *   [
+ *     ["is", "visit:country", ["US"]],
+ *     [
+ *       "or",
+ *       [
+ *         ["contains", "event:page", ["/pricing"]],
+ *         ["contains", "event:page", ["/products"]],
+ *       ],
+ *     ],
+ *     ["is_not", "visit:device", ["Mobile"]],
+ *   ],
+ * ];
+ * ```
  */
 export type Filter = SimpleFilter | LogicalFilter;
 
