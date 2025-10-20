@@ -202,16 +202,33 @@ export interface QueryParams {
 }
 
 /**
+ * Metadata returned with query responses.
+ */
+export interface QueryResponseMeta {
+  /** Warning message if applicable (e.g., metric/dimension compatibility issues) */
+  warning?: string;
+}
+
+/**
  * Response from the Stats API.
+ *
+ * @example
+ * ```ts
+ * const response: QueryResponse = {
+ *   results: [
+ *     { visitors: 1234, pageviews: 5678 }
+ *   ],
+ *   meta: {
+ *     warning: "Some metrics may not be available for this query"
+ *   }
+ * };
+ * ```
  */
 export interface QueryResponse {
   /** Query results */
   results: QueryResult[];
   /** Query metadata */
-  meta?: {
-    /** Warning messages if any */
-    warning?: string;
-  };
+  meta?: QueryResponseMeta;
 }
 
 /**

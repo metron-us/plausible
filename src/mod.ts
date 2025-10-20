@@ -34,6 +34,7 @@ export type {
   PlausibleError,
   QueryParams,
   QueryResponse,
+  QueryResponseMeta,
   QueryResult,
   SimpleFilter,
 } from "./types.ts";
